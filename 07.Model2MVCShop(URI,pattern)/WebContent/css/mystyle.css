@@ -1,0 +1,28 @@
+section {
+  width : 70%;
+  height : 500px;
+  border-style: ridge;
+  border-width: 10px;
+  float : left;
+
+}
+
+
+aside {
+  width : 23%;
+  height : 500px;
+  border-style: ridge;
+  border-width: 10px;
+  float : right;
+}
+
+textarea {
+  width : 73%;
+  height : 100px;
+}
+
+input {
+  display : inline;
+  width : 150px;
+  height: 100px;
+}

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="ChattingMapper">
+
+
+	
+	<resultMap type= "Chatting" id="chattingSelectMap">
+		<result property="chattingNo" column="CHATTING_NO" jdbcType="INTEGER" />
+		<result property="userId" column="USER_ID" jdbcType="VARCHAR" />
+		<result property="message" column="MESSAGE" jdbcType="VARCHAR" />
+		<result property="date" column="TIME" jdbcType="DATE" />
+	</resultMap>
+
+	<insert id="addChatting" parameterType="Chatting">
+		insert INTO Chatting
+		VALUES ( seq_chatting_chatting_no.NEXTVAL, #{userId:VARCHAR},#{message:VARCHAR},SYSDATE)
+	
+	</insert>
+
+	<select id="getChatting" resultMap="chattingSelectMap">
+		select
+		*
+		from chatting
+		order by time asc
+	</select>
+	
+	<select id="recentChatting" resultMap="chattingSelectMap">
+		select * 
+		from CHATTING
+		where CHATTING_NO= (SELECT LAST_NUMBER-1
+		FROM USER_SEQUENCES
+		WHERE SEQUENCE_NAME = 'SEQ_CHATTING_CHATTING_NO')		
+	</select>
+
+</mapper>

@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="ProductMapper01">
+
+	<resultMap type="ProductPurchase" id="productPurchase">
+		<result property="fileName" column="IMAGE_FILE" jdbcType="VARCHAR" />
+		<result property="manuDate" column="MANUFACTURE_DAY" jdbcType="VARCHAR" />
+		<result property="price" column="PRICE" jdbcType="INTEGER" />
+		<result property="prodDetail" column="PROD_DETAIL" jdbcType="VARCHAR" />
+		<result property="prodName" column="PROD_NAME" jdbcType="VARCHAR" />
+		<result property="prodNo" column="PROD_NO" jdbcType="INTEGER" />
+		<result property="regDate" column="REG_DATE" jdbcType="DATE" />
+		<result property="tranCode" column="tran_status_code" jdbcType="VARCHAR" />
+		<result property="tranNo" column="tran_no" jdbcType="INTEGER" />
+		<result property="stockCount" column="stockCount" jdbcType="INTEGER" />
+	</resultMap>
+
+	<resultMap type="product" id="productSelectMap">
+		<result property="fileName" column="IMAGE_FILE" jdbcType="VARCHAR" />
+		<result property="manuDate" column="MANUFACTURE_DAY" jdbcType="VARCHAR" />
+		<result property="price" column="PRICE" jdbcType="INTEGER" />
+		<result property="prodDetail" column="PROD_DETAIL" jdbcType="VARCHAR" />
+		<result property="prodName" column="PROD_NAME" jdbcType="VARCHAR" />
+		<result property="prodNo" column="PROD_NO" jdbcType="INTEGER" />
+		<result property="regDate" column="REG_DATE" jdbcType="DATE" />
+		<result property="stockCount" column="stockCount" jdbcType="INTEGER" />
+	</resultMap>
+
+
+	<select id="findProduct" parameterType="int"
+		resultMap="productSelectMap">
+		select
+		*
+		from PRODUCT
+		where prod_no= #{value}
+	</select>
+	
+	<select id="recentProduct" resultMap="productSelectMap">
+		select * 
+		from product
+		where prod_no= (SELECT LAST_NUMBER-1
+		FROM USER_SEQUENCES
+		WHERE SEQUENCE_NAME = 'SEQ_PRODUCT_PROD_NO')		
+	</select>	
+
+	<sql id="front">
+  		SELECT * FROM (		SELECT inner_table. * ,  ROWNUM AS row_seq  	FROM (	
+  	</sql>
+  	
+  	 <sql id="back">
+  					) inner_table
+		WHERE ROWNUM <![CDATA[ <= ]]> #{currentPage}*#{pageSize} ) 
+		WHERE row_seq BETWEEN ( (#{currentPage}-1)*#{pageSize}+1) AND (#{currentPage}*#{pageSize})
+  	</sql>
+  	
+  	<select id="getProductListVanila" parameterType="search" resultMap="productSelectMap">
+	<include refid="front" />
+		SELECT A.*
+		FROM product A
+		<if test="searchCondition != null">
+			<if test="searchCondition==0">
+					WHERE A.PROD_NO like '%'||#{searchKeyword}||'%'
+			</if>
+			
+			<if test="searchCondition==1">
+					WHERE A.PROD_NAME like '%'||#{searchKeyword}||'%'
+			</if>
+			
+			<if test="searchCondition==2">
+					WHERE A.price like '%'||#{searchKeyword}||'%'
+			</if>
+		</if>
+		order by A.PROD_NO
+		<include refid="back" />		
+  	</select>
+  	
+	<select id="getProductList" parameterType="search" resultMap="productPurchase">
+		<include refid="front" />
+		SELECT A.*, B.tran_status_code, B.tran_no
+		FROM product A, transaction B
+		WHERE A.prod_no=B.prod_no(+) and B.tran_status_code IS NOT NULL
+		<if test="searchCondition != null">
+			<if test="searchCondition==0">
+					and A.PROD_NO like '%'||#{searchKeyword}||'%'
+			</if>
+			
+			<if test="searchCondition==1">
+					and A.PROD_NAME like '%'||#{searchKeyword}||'%'
+			</if>
+			
+			<if test="searchCondition==2">
+					and A.price like '%'||#{searchKeyword}||'%'
+			</if>
+		</if>
+		order by A.PROD_NO
+		<include refid="back" />
+	</select>
+
+	<insert id="addProduct" parameterType="product">
+		insert into product
+		(PROD_NO,PROD_NAME,PROD_DETAIL,MANUFACTURE_DAY,PRICE,IMAGE_FILE,REG_DATE,STOCKCOUNT)
+		values (seq_product_prod_no.NEXTVAL,
+		#{prodName:VARCHAR},
+		#{prodDetail:VARCHAR},
+		#{manuDate:VARCHAR},
+		#{price:INTEGER},
+		#{fileName:VARCHAR},
+		SYSDATE,
+		#{stockCount:INTEGER} )
+	</insert>
+	
+
+	
+	<!-- trim태그 사이에 다른 절이 삽입되는경우에, 다른 태그도 Overrides동작을 같이 받는다.. -->
+	<update id="updateProduct" parameterType="product">
+		UPDATE product
+		<trim prefix="SET" suffixOverrides=",">
+			<if test="prodName !=null">prod_name = #{prodName},</if>
+			<if test="prodDetail !=null">prod_detail = #{prodDetail},</if>
+			<if test="manuDate !=null">manufacture_day = #{manuDate},</if>
+			<if test="price !=null">price = #{price},</if>
+			<if test="fileName !=null">image_file = #{fileName},</if>
+			<if test="stockCount !=null">stockCount = #{stockCount},</if>
+		</trim>
+			<where>
+				prod_no = #{prodNo}
+			</where>
+
+	</update>
+	
+	 <select  id="getTotalCount"  parameterType="search"	 resultType="int">
+	  	SELECT COUNT(*)
+	  	FROM(			SELECT A.*, B.tran_status_code, B.tran_no
+		FROM product A, transaction B
+		WHERE A.prod_no=B.prod_no(+) and B.tran_status_code IS NOT NULL
+		<if test="searchCondition != null">
+			<if test="searchCondition==0">
+					and A.PROD_NO like '%'||#{searchKeyword}||'%'
+			</if>
+			
+			<if test="searchCondition==1">
+					and A.PROD_NAME like '%'||#{searchKeyword}||'%'
+			</if>
+			
+			<if test="searchCondition==2">
+					and A.price like '%'||#{searchKeyword}||'%'
+			</if>
+		</if>
+		order by A.PROD_NO ) 	
+	 </select>	
+	 
+	 <select id="getTotalCountVanila" parameterType="search" resultType="int">
+		 SELECT COUNT(*)
+			FROM( SELECT A.*
+			FROM product A
+			<if test="searchCondition != null">
+			<if test="searchCondition==0">
+					where A.PROD_NO like '%'||#{searchKeyword}||'%'
+			</if>
+			
+			<if test="searchCondition==1">
+					where A.PROD_NAME like '%'||#{searchKeyword}||'%'
+			</if>
+			
+			<if test="searchCondition==2">
+					where A.price like '%'||#{searchKeyword}||'%'
+			</if>
+		</if>
+	
+			order by A.PROD_NO ) 	
+	 
+	 
+	 </select>
+
+
+</mapper>

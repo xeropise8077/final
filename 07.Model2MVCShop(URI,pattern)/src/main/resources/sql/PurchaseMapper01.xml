@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="PurchaseMapper01">
+
+	<resultMap type="Purchase" id="purchaseSelectMap">
+		<result jdbcType="INTEGER" column="tran_no" property="tranNo"/>
+		<result jdbcType="VARCHAR" column="payment_option" property="paymentOption"/>
+		<result jdbcType="VARCHAR" column="receiver_name" property="receiverName"/>		
+		<result jdbcType="VARCHAR" column="receiver_phone" property="receiverPhone"/>
+		<result jdbcType="VARCHAR" column="DEMAILADDR" property="divyAddr"/>
+		<result jdbcType="VARCHAR" column="dlvy_request" property="divyRequest"/>
+		<result jdbcType="VARCHAR" column="tran_status_code" property="tranCode"/>
+		<result jdbcType="DATE" column="order_data" property="orderDate"/>
+		<result jdbcType="VARCHAR" column="dlvy_date" property="divyDate"/>
+		<result jdbcType="INTEGER" column="PROD_NO" property="purchaseProd.prodNo"/>
+		<result jdbcType="VARCHAR" column="BUYER_ID" property="buyer.userId"/>
+		<result jdbcType="INTEGER" column="count" property="count"/>
+	</resultMap>
+	
+	<insert id="addPurchase" parameterType="purchase">
+		INSERT INTO transaction 
+		(TRAN_NO, PROD_NO, BUYER_ID, PAYMENT_OPTION, RECEIVER_NAME, RECEIVER_PHONE, DEMAILADDR, DLVY_REQUEST, DLVY_DATE, TRAN_STATUS_CODE, COUNT )
+		VALUES (seq_transaction_tran_no.nextval, 
+		#{purchaseProd.prodNo:INTEGER}, 
+		#{buyer.userId:VARCHAR}, 
+		#{paymentOption:VARCHAR}, 
+		#{receiverName:VARCHAR}, 
+		#{receiverPhone:VARCHAR}, 
+		#{divyAddr:VARCHAR}, 
+		#{divyRequest:VARCHAR}, 
+		#{divyDate:VARCHAR}, 
+		'1',
+		#{count:INTEGER} )
+	</insert>
+
+
+	<select id="findPurchase" parameterType="int"
+		resultMap="purchaseSelectMap">
+		select * 
+		from transaction 
+		where tran_no=#{value}
+	</select>
+	
+	<update id="updatePurchase" parameterType="Purchase">
+		UPDATE transaction
+		<trim prefix="SET" suffixOverrides=",">
+			<if test="paymentOption !=null">payment_option = #{paymentOption},</if>
+			<if test="receiverName !=null">receiver_name = #{receiverName},</if>
+			<if test="receiverPhone !=null">receiver_phone = #{receiverPhone},</if>
+			<if test="divyAddr !=null">demailaddr = #{divyAddr},</if>
+			<if test="divyRequest !=null">dlvy_request = #{divyRequest},</if>
+			<if test="divyDate !=null">dlvy_date = #{divyDate},</if>
+		</trim>
+			<where>
+				prod_no = #{purchaseProd.prodNo}
+			</where>
+	</update>
+
+
+	<!-- trim태그 사이에 다른 절이 삽입되는경우에, 다른 태그도 Overrides동작을 같이 받는다.. -->
+	<update id="updateTranCode" parameterType="Purchase">
+		update transaction
+		<trim prefix="SET" suffixOverrides=",">
+			<if test="tranCode !=null">TRAN_STATUS_CODE = #{tranCode},</if>
+		</trim>
+			<where>
+				tran_no = #{tranNo}
+			</where>
+	</update>
+	
+	<sql id="front">
+  		SELECT * FROM (		SELECT inner_table. * ,  ROWNUM AS row_seq  	FROM (	
+  	</sql>
+  	
+  	 <sql id="back">
+  					) inner_table
+		WHERE ROWNUM <![CDATA[ <= ]]> #{search.currentPage}*#{search.pageSize} ) 
+		WHERE row_seq BETWEEN ( (#{search.currentPage}-1)*#{search.pageSize}+1) AND (#{search.currentPage}*#{search.pageSize})
+  	</sql>
+  	
+  	
+	<select id="getPurchaseList" parameterType="Map" resultMap="purchaseSelectMap">
+		<include refid="front" />
+		select * from transaction 
+		<where>
+			buyer_id = #{buyerId}
+		</where>		
+		<if test="searchCondition != null">
+			<if test="searchCondition==0">
+					and A.TRAN_NO LIKE '%'||#{search.searchKeyword}||'%'
+			</if>
+			
+			<if test="searchCondition==1">
+					and A.RECEIVER_NAME LIKE '%'||#{search.searchKeyword}||'%'
+			</if>
+		</if>
+		order by TRAN_NO
+		<include refid="back" />
+	</select>
+
+
+	 <select  id="getTotalCount"  parameterType="Map"	 resultType="int">
+	  	SELECT COUNT(*)
+	  	FROM( select * from transaction 
+		<where>
+			buyer_id = #{buyerId}
+		</where>		
+		<if test="searchCondition != null">
+			<if test="searchCondition==0">
+					and A.PROD_NO LIKE '%'||#{search.searchKeyword}||'%'
+			</if>
+			
+			<if test="searchCondition==1">
+					and A.RECEIVER_NAME LIKE '%'||#{search.searchKeyword}||'%'
+			</if>
+		</if>
+		order by TRAN_NO ) countTable	
+	 </select>	
+
+</mapper>

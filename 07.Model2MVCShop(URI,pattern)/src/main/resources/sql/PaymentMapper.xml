@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="PaymentMapper">
+
+	<resultMap type="payment" id="paymentSelectMap">
+		
+		<result property="paymentNo" column="payment_no" jdbcType="INTEGER"/>
+		<result property="buyer_id" column="buyer_id" jdbcType="VARCHAR" />
+		<result property="prodNo" column="prod_no" jdbcType="INTEGER" />
+		<result property="count" column="count" jdbcType="INTEGER" />
+		<result property="tranNo" column="tran_no" jdbcType="INTEGER" />
+		<result property="price" column="price" jdbcType="INTEGER" />
+		<result property="paymentByMoney" column="paymentByMoney" jdbcType="INTEGER" />
+		<result property="paymentByWishPay" column="paymentByWishPay" jdbcType="INTEGER" />
+	</resultMap>
+
+
+	<select id="findPayment" parameterType="int" resultMap="paymentSelectMap">
+		select
+		*
+		from PAYMENT
+		where tran_no= #{value}
+	</select>
+
+	<insert id="addPayment" parameterType="Payment">
+		insert into Payment
+		(payment_no, buyer_id, prod_no, count, tran_no, price, paymentByMoney, paymentByWishPay)
+		values (seq_payment_payment_no.NEXTVAL,
+		#{buyer_id:VARCHAR},
+		#{prodNo:INTEGER},
+		#{count:INTEGER},
+		(SELECT LAST_NUMBER FROM USER_SEQUENCES WHERE SEQUENCE_NAME = 'SEQ_TRANSACTION_TRAN_NO'),
+		#{price:INTEGER},
+		#{paymentByMoney:INTEGER},
+		#{paymentByWishPay:INTEGER} )
+	</insert>
+	
+<!-- 
+	<sql id="front">
+  		SELECT * FROM (		SELECT inner_table. * ,  ROWNUM AS row_seq  	FROM (	
+  	</sql>
+  	
+  	 <sql id="back">
+  					) inner_table
+		WHERE ROWNUM <![CDATA[ <= ]]> #{currentPage}*#{pageSize} ) 
+		WHERE row_seq BETWEEN ( (#{currentPage}-1)*#{pageSize}+1) AND (#{currentPage}*#{pageSize})
+  	</sql>
+  	
+  	<select id="getProductListVanila" parameterType="search" resultMap="productSelectMap">
+	<include refid="front" />
+		SELECT A.*
+		FROM product A
+		<if test="searchCondition != null">
+			<if test="searchCondition==0">
+					WHERE A.PROD_NO like '%'||#{searchKeyword}||'%'
+			</if>
+			
+			<if test="searchCondition==1">
+					WHERE A.PROD_NAME like '%'||#{searchKeyword}||'%'
+			</if>
+			
+			<if test="searchCondition==2">
+					WHERE A.price like '%'||#{searchKeyword}||'%'
+			</if>
+		</if>
+		order by A.PROD_NO
+		<include refid="back" />		
+  	</select>
+  	
+	<select id="getProductList" parameterType="search" resultMap="productPurchase">
+		<include refid="front" />
+		SELECT A.*, B.tran_status_code, B.tran_no
+		FROM product A, transaction B
+		WHERE A.prod_no=B.prod_no(+)
+		<if test="searchCondition != null">
+			<if test="searchCondition==0">
+					and A.PROD_NO like '%'||#{searchKeyword}||'%'
+			</if>
+			
+			<if test="searchCondition==1">
+					and A.PROD_NAME like '%'||#{searchKeyword}||'%'
+			</if>
+			
+			<if test="searchCondition==2">
+					and A.price like '%'||#{searchKeyword}||'%'
+			</if>
+		</if>
+		order by A.PROD_NO
+		<include refid="back" />
+	</select>
+ 
+ -->
+
+	
+	<!-- trim태그 사이에 다른 절이 삽입되는경우에, 다른 태그도 Overrides동작을 같이 받는다.. -->
+<!-- 	<update id="updateProduct" parameterType="product">
+		UPDATE product
+		<trim prefix="SET" suffixOverrides=",">
+			<if test="prodName !=null">prod_name = #{prodName},</if>
+			<if test="prodDetail !=null">prod_detail = #{prodDetail},</if>
+			<if test="manuDate !=null">manufacture_day = #{manuDate},</if>
+			<if test="price !=null">price = #{price},</if>
+			<if test="fileName !=null">image_file = #{fileName},</if>
+			<if test="stockCount !=null">stockCount = #{stockCount},</if>
+		</trim>
+			<where>
+				prod_no = #{prodNo}
+			</where>
+
+	</update>
+	
+	 <select  id="getTotalCount"  parameterType="search"	 resultType="int">
+	  	SELECT COUNT(*)
+	  	FROM(			SELECT A.*, B.tran_status_code, B.tran_no
+		FROM product A, transaction B
+		WHERE A.prod_no=B.prod_no(+)
+		<if test="searchCondition != null">
+			<if test="searchCondition==0">
+					and A.PROD_NO like '%'||#{searchKeyword}||'%'
+			</if>
+			
+			<if test="searchCondition==1">
+					and A.PROD_NAME like '%'||#{searchKeyword}||'%'
+			</if>
+			
+			<if test="searchCondition==2">
+					and A.price like '%'||#{searchKeyword}||'%'
+			</if>
+		</if>
+		order by A.PROD_NO ) 	
+	 </select>	
+
+-->
+</mapper>
